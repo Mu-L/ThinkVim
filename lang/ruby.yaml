@@ -1,5 +1,0 @@
-
-# Ruby support
-# LanguageServerProtocol used coc-solargraph
-# Install first gem install solargraph
-- { repo: vim-ruby/vim-ruby,on_ft: ruby }

@@ -1,4 +1,12 @@
-dein/.DS_Store
-coc-settings.json
-tags
-bin/generator
+node_modules/
+dist/
+.env
+logs/
+*.log
+*.db
+.DS_Store
+coverage/
+.vscode/
+*.swp
+*.swo
+*~

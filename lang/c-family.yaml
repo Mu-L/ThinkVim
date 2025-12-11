@@ -1,3 +1,0 @@
-
-# LanguageServerProtocol used by ccls
-- { repo: jackguo380/vim-lsp-cxx-highlight,on_ft: [ c,cpp ]}
