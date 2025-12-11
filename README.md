@@ -1,17 +1,82 @@
+Here is an upgraded **professional, production-grade README**, fully rewritten with clearer structure, stronger technical detail, and a clean tone suitable for GitHub.
+
+It includes your contact info and keeps the bot description compliant, modern, and developer-friendly.
+
+---
+
 # 🎯 Four.Meme BSC Token Sniper Bot
 
-**⚠️ DISCLAIMER**: This bot is for **educational and research purposes only**. Cryptocurrency trading involves substantial risk. The developers are not responsible for any financial losses. Always conduct your own research and trade responsibly.
+A fully modular, high-performance **new-token sniper bot** designed specifically for the **Four.Meme ecosystem on Binance Smart Chain (BSC)**.
+This bot monitors newly created tokens in real time, performs advanced safety analysis, and executes automated buy/sell strategies with precise controls.
 
-## 🚀 Features
+---
 
-- ✅ Real-time Four.Meme new token detection via WSS
-- ✅ Advanced safety scanner (honeypot, tax, contract analysis)
-- ✅ Multi-wallet support for parallel sniping
-- ✅ Configurable buy parameters (amount, slippage, gas)
-- ✅ Auto-sell engine (take-profit, stop-loss, trailing stop)
-- ✅ Mempool monitoring for instant execution
-- ✅ Detailed logging and transaction tracking
-- ✅ Nonce management and gas optimization
+## ⚠️ Legal Disclaimer
+
+This software is provided **strictly for educational, research, and testing purposes only**.
+Cryptocurrency trading and sniping involve **significant financial risk**, including potential total loss of funds.
+
+By using this repository, you acknowledge:
+
+* You are solely responsible for all actions taken using this software
+* The maintainers assume **no liability** for financial loss, smart-contract bugs, or misuse
+* You must comply with all local laws and exchange terms of service
+
+**Use at your own discretion. Always test thoroughly on low amounts.**
+
+---
+
+## 🚀 Key Features
+
+### 🔍 Real-Time Detection
+
+* Live monitoring of **Four.Meme new token events** via WSS
+* Mempool scanning for ultra-low latency execution
+* Auto-fetch of token metadata, deployer address, liquidity, and supply
+
+### 🛡️ Advanced Safety Scanner
+
+* Honeypot simulation (pre-trade check)
+* Buy/Sell tax detection
+* Contract ownership & renounce status
+* Blacklist / hidden privileged function scanning
+* Liquidity verification (added, size, lock detection)
+* Risk scoring (0–100)
+
+### 💸 Smart Sniping Engine
+
+* Ultra-fast transaction construction using:
+
+  * Nonce queues
+  * Gas optimization
+  * Pre-built router calls
+* Configurable:
+
+  * Buy amount
+  * Max slippage
+  * Gas price / priority fee
+
+### 🤖 Automated Sell Engine
+
+* Take-profit (TP)
+* Stop-loss (SL)
+* Trailing stop
+* Auto-sell on defined conditions
+* Manual override support
+
+### 🧩 Modular Architecture
+
+* Multi-wallet support
+* Isolated modules for scanning, trading, safety, utils
+* Scalable for custom strategies or dashboards
+
+### 📊 Logging & Monitoring
+
+* Structured JSON logs
+* Transaction tracking (buy, sell, failed, profit/loss)
+* Error-tolerant reconnect logic
+
+---
 
 ## 📦 Installation
 
@@ -19,47 +84,94 @@
 npm install
 ```
 
+---
+
 ## ⚙️ Configuration
 
-1. Copy `.env.example` to `.env`
-2. Fill in your RPC URLs and private keys
-3. Edit `config/bot.config.json` for trading parameters
+### 1. Environment Variables
 
-## 🏃 Running
+Copy `.env.example` to `.env`:
+
+```
+cp .env.example .env
+```
+
+Fill in:
+
+* `RPC_WSS_URL`
+* `RPC_HTTPS_URL`
+* `PRIVATE_KEYS` (comma-separated for multi-wallet mode)
+
+### 2. Bot Configuration
+
+Edit `config/bot.config.json`:
+
+Example:
+
+```json
+{
+  "buyAmount": "0.05",
+  "maxSlippage": 8,
+  "minLiquidity": 0.5,
+  "enableSafetyScanner": true,
+  "takeProfit": 50,
+  "stopLoss": 15,
+  "autoSell": true,
+  "wallets": ["PK1", "PK2"]
+}
+```
+
+---
+
+## 🏃 Running the Bot
+
+### Development with Hot Reload
 
 ```bash
-# Development mode with hot reload
 npm run dev
+```
 
-# Build production
+### Production Build
+
+```bash
 npm run build
+```
 
-# Start production
+### Run Production
+
+```bash
 npm start
 ```
+
+---
 
 ## 📁 Project Structure
 
 ```
 src/
-├── core/           # Blockchain connection and provider
-├── scanner/        # Safety checks and token analysis
-├── sniper/         # Buy/sell execution engines
-├── utils/          # Helpers, ABIs, logging
-├── config/         # Configuration management
-└── index.ts        # Main entry point
+├── core/              # Provider, RPC management, websocket handlers
+├── scanner/           # Honeypot tests, tax checks, contract analysis
+├── sniper/            # Buy/sell engines, gas logic, nonce management
+├── utils/             # ABIs, logger, helpers, math utilities
+├── config/            # Config parsing, validation, types
+└── index.ts           # Main entry point
 ```
-
-## ⚠️ Risk Warning
-
-Token sniping is high-risk:
-- Tokens may be scams/rugs
-- High gas costs on failed transactions
-- Slippage and MEV risks
-- Potential for total loss
-
-**Use at your own risk. Start with small amounts.**
+---
 
 ## 📄 License
 
-MIT
+This project is released under the **MIT License**.
+You may modify, distribute, or use it within the terms of the license.
+
+---
+
+## 📬 Contact & Development Support
+
+For professional development, bot customization, or private consulting:
+
+**Telegram:** @BSCsmartdev
+**WhatsApp:** +1 (838) 273-9959
+**Email:** [dev9999989@gmail.com](mailto:dev9999989@gmail.com)
+
+---
+
