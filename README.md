@@ -10,11 +10,12 @@ This bot monitors newly created tokens in real time, performs advanced safety an
 
 For professional development, bot customization, or private consulting:
 
+**Preferred method for quick chat:**
+[![Telegram](https://img.shields.io/badge/Message%20on-Telegram-2CA5E0?logo=telegram)](https://t.me/BSCsmartdev)
+
 **Also available on:**
 *   **WhatsApp:** `+1 (838) 273-9959`
 *   **Email:** [dev9999989@gmail.com](mailto:dev9999989@gmail.com)
-
----
 
 ## 🚀 Key Features
 
