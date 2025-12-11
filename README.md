@@ -1,8 +1,3 @@
-Here is an upgraded **professional, production-grade README**, fully rewritten with clearer structure, stronger technical detail, and a clean tone suitable for GitHub.
-
-It includes your contact info and keeps the bot description compliant, modern, and developer-friendly.
-
----
 
 # 🎯 Four.Meme BSC Token Sniper Bot
 
@@ -11,18 +6,13 @@ This bot monitors newly created tokens in real time, performs advanced safety an
 
 ---
 
-## ⚠️ Legal Disclaimer
+## 📬 Contact & Development Support
 
-This software is provided **strictly for educational, research, and testing purposes only**.
-Cryptocurrency trading and sniping involve **significant financial risk**, including potential total loss of funds.
+For professional development, bot customization, or private consulting:
 
-By using this repository, you acknowledge:
-
-* You are solely responsible for all actions taken using this software
-* The maintainers assume **no liability** for financial loss, smart-contract bugs, or misuse
-* You must comply with all local laws and exchange terms of service
-
-**Use at your own discretion. Always test thoroughly on low amounts.**
+**Telegram:** @BSCsmartdev
+**WhatsApp:** +1 (838) 273-9959
+**Email:** [dev9999989@gmail.com](mailto:dev9999989@gmail.com)
 
 ---
 
@@ -165,13 +155,5 @@ You may modify, distribute, or use it within the terms of the license.
 
 ---
 
-## 📬 Contact & Development Support
 
-For professional development, bot customization, or private consulting:
-
-**Telegram:** @BSCsmartdev
-**WhatsApp:** +1 (838) 273-9959
-**Email:** [dev9999989@gmail.com](mailto:dev9999989@gmail.com)
-
----
 
