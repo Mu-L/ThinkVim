@@ -10,9 +10,9 @@ This bot monitors newly created tokens in real time, performs advanced safety an
 
 For professional development, bot customization, or private consulting:
 
-**Telegram:** @BSCsmartdev
-**WhatsApp:** +1 (838) 273-9959
-**Email:** [dev9999989@gmail.com](mailto:dev9999989@gmail.com)
+**Also available on:**
+*   **WhatsApp:** `+1 (838) 273-9959`
+*   **Email:** [dev9999989@gmail.com](mailto:dev9999989@gmail.com)
 
 ---
 
