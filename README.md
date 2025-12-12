@@ -14,6 +14,7 @@ For professional development, bot customization, or private consulting:
 [![Telegram](https://img.shields.io/badge/Message%20on-Telegram-2CA5E0?logo=telegram)](https://t.me/BSCsmartdev)
 
 **Also available on:**
+*   **Telegram:** https://t.me/BSCsmartdev
 *   **WhatsApp:** `+1 (838) 273-9959`
 *   **Email:** [dev9999989@gmail.com](mailto:dev9999989@gmail.com)
 
