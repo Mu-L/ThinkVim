@@ -8,7 +8,7 @@
 ---
 
 📞 **Telegram Contact:**  
-[![Telegram](https://img.shields.io/badge/Telegram-Contact-blue?logo=telegram&logoColor=white)](https://t.me/@SmartLead007)
+(https://t.me/@SmartLead007)
 
 ## 🔥 Why This Polymarket Trading Bot?
 
