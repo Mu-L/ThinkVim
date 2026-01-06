@@ -1,329 +1,421 @@
-import { BlockchainProvider } from './core/provider';
-import { WalletManager } from './core/walletManager';
-import { FactoryListener, NewTokenInfo } from './scanner/factoryListener';
-import { SafetyScanner, SafetyConfig } from './scanner/safetyScanner';
-import { SniperEngine, SniperConfig } from './sniper/sniperEngine';
-import { SellEngine, SellConfig } from './sniper/sellEngine';
-import { ConfigLoader } from './config/configLoader';
-import { logger } from './utils/logger';
+import { EventEmitter } from 'events';
+import PolymarketAPI from './api/polymarket';
+import PolymarketWebSocket from './api/websocket';
+import MarketScanner from './market/marketScanner';
+import OrderbookEngine from './market/orderbook';
+import SpreadArbitrageStrategy from './strategy/spreadArb';
+import MomentumStrategy from './strategy/momentum';
+import RiskManager from './trader/riskManager';
+import OrderManager from './trader/orderManager';
+import PositionManager from './trader/positionManager';
+import config from './config/env';
+import logger from './utils/logger';
 
-/**
- * Main bot orchestrator
- */
-export class FourMemeSniperBot {
-  private config: ConfigLoader;
-  private provider: BlockchainProvider;
-  private walletManager: WalletManager;
-  private factoryListener: FactoryListener;
-  private safetyScanner: SafetyScanner;
-  private sniperEngine: SniperEngine;
-  private sellEngine: SellEngine;
-  private isRunning: boolean = false;
+class PolymarketTradingBot extends EventEmitter {
+  private api: PolymarketAPI;
+  private ws: PolymarketWebSocket;
+  private marketScanner: MarketScanner;
+  private orderbookEngine: OrderbookEngine;
+  private strategies: (SpreadArbitrageStrategy | MomentumStrategy)[] = [];
+  private riskManager: RiskManager;
+  private orderManager: OrderManager;
+  private positionManager: PositionManager;
+
+  private running = false;
+  private strategyInterval: NodeJS.Timeout | null = null;
 
   constructor() {
-    this.config = new ConfigLoader();
+    super();
 
-    const envConfig = this.config.getEnvConfig();
-    const botConfig = this.config.getBotConfig();
+    logger.info('Initializing Polymarket Trading Bot...');
 
-    // Initialize blockchain provider
-    this.provider = new BlockchainProvider(
-      envConfig.RPC_WSS_URL,
-      envConfig.RPC_HTTPS_URL
-    );
+    // Initialize API clients
+    this.api = new PolymarketAPI();
+    this.ws = new PolymarketWebSocket(this.api);
 
-    // Initialize wallet manager
-    this.walletManager = new WalletManager(
-      this.provider,
-      envConfig.PRIVATE_KEYS,
-      botConfig.monitoring.maxPendingTx
-    );
+    // Initialize market components
+    this.marketScanner = new MarketScanner(this.api);
+    this.orderbookEngine = new OrderbookEngine(this.api, this.ws);
 
-    // Get PancakeSwap factory from router
-    const PANCAKE_FACTORY = '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73';
+    // Initialize trading components
+    this.riskManager = new RiskManager();
+    this.orderManager = new OrderManager(this.api, this.riskManager);
+    this.positionManager = new PositionManager(this.api, this.riskManager);
 
-    // Initialize factory listener
-    this.factoryListener = new FactoryListener(
-      this.provider,
-      envConfig.FOUR_MEME_FACTORY,
-      PANCAKE_FACTORY
-    );
+    // Initialize strategies
+    this.initializeStrategies();
 
-    // Initialize safety scanner
-    this.safetyScanner = new SafetyScanner(
-      this.provider,
-      envConfig.PANCAKE_ROUTER_V2
-    );
+    // Setup event handlers
+    this.setupEventHandlers();
 
-    // Initialize sniper engine
-    this.sniperEngine = new SniperEngine(
-      this.provider,
-      this.walletManager,
-      envConfig.PANCAKE_ROUTER_V2
-    );
-
-    // Initialize sell engine
-    this.sellEngine = new SellEngine(
-      this.provider,
-      this.walletManager,
-      envConfig.PANCAKE_ROUTER_V2,
-      botConfig.monitoring.checkInterval
-    );
+    logger.info('Polymarket Trading Bot initialized successfully');
   }
 
   /**
-   * Start the bot
+   * Start the trading bot
    */
   async start(): Promise<void> {
-    if (this.isRunning) {
-      logger.warning('Bot is already running');
+    if (this.running) {
+      logger.warn('Bot is already running');
       return;
     }
 
     try {
-      logger.banner();
-      this.config.displaySummary();
+      logger.info('Starting Polymarket Trading Bot...');
 
-      logger.info('🚀 Starting Four.Meme Sniper Bot...');
+      // Connect WebSocket
+      this.ws.connect();
 
-      // Connect to blockchain
-      await this.provider.connect();
+      // Start market scanning
+      this.marketScanner.startScanning();
 
-      // Sync wallet nonces
-      await this.walletManager.syncNonces();
+      // Start position synchronization
+      await this.positionManager.syncPositions();
 
-      // Check wallet balances
-      const botConfig = this.config.getBotConfig();
-      const minBalance = BigInt(Number(botConfig.trading.buyAmount) * 1.1 * 1e18); // 10% buffer
-      const hasSufficientBalance = await this.walletManager.checkBalances(minBalance);
+      // Start strategy execution
+      this.startStrategyExecution();
 
-      if (!hasSufficientBalance) {
-        logger.warning('⚠️ Some wallets have insufficient balance. Continue anyway? (Ctrl+C to abort)');
-        // Wait 5 seconds before continuing
-        await new Promise(resolve => setTimeout(resolve, 5000));
-      }
+      this.running = true;
+      logger.info('Polymarket Trading Bot started successfully');
 
-      // Initialize factory listener
-      await this.factoryListener.initialize();
+      this.emit('started');
 
-      // Register new token callback
-      this.factoryListener.onNewToken(async (tokenInfo) => {
-        await this.handleNewToken(tokenInfo);
-      });
-
-      // Start listening for new tokens
-      await this.factoryListener.startListening();
-
-      this.isRunning = true;
-      logger.success('✅ Bot is running and listening for new tokens...');
-      logger.info('Press Ctrl+C to stop');
     } catch (error) {
-      logger.error('Failed to start bot', error);
+      logger.error('Failed to start bot:', error);
       throw error;
     }
   }
 
   /**
-   * Handle new token detection
+   * Stop the trading bot
    */
-  private async handleNewToken(tokenInfo: NewTokenInfo): Promise<void> {
+  async stop(): Promise<void> {
+    if (!this.running) {
+      logger.info('Bot is not running');
+      return;
+    }
+
     try {
-      const botConfig = this.config.getBotConfig();
+      logger.info('Stopping Polymarket Trading Bot...');
 
-      logger.info(`
-╔═══════════════════════════════════════════════════════════╗
-║  🆕 NEW TOKEN DETECTED                                    ║
-╚═══════════════════════════════════════════════════════════╝
-  Symbol: ${tokenInfo.symbol || 'Unknown'}
-  Address: ${tokenInfo.tokenAddress}
-  Pair: ${tokenInfo.pairAddress}
-  Creator: ${tokenInfo.creator}
-      `);
+      // Stop strategy execution
+      this.stopStrategyExecution();
 
-      // Run safety analysis if enabled
-      if (botConfig.safety.enableSafetyScanner) {
-        const safetyConfig: SafetyConfig = {
-          minSafetyScore: botConfig.safety.minSafetyScore,
-          minLiquidity: botConfig.safety.minLiquidity,
-          maxBuyTax: botConfig.safety.maxBuyTax,
-          maxSellTax: botConfig.safety.maxSellTax,
-          checkHoneypot: botConfig.safety.checkHoneypot,
-          checkOwnership: botConfig.safety.checkOwnership,
-          checkLiquidity: botConfig.safety.checkLiquidity,
-        };
+      // Cancel all open orders
+      await this.orderManager.cancelAllOrders();
 
-        const safetyReport = await this.safetyScanner.analyzeToken(tokenInfo, safetyConfig);
+      // Stop market scanning
+      this.marketScanner.stopScanning();
 
-        // Check if token passes safety requirements
-        if (safetyReport.safetyScore < safetyConfig.minSafetyScore) {
-          logger.warning(`❌ Token rejected: Safety score ${safetyReport.safetyScore}/100`);
-          return;
-        }
+      // Disconnect WebSocket
+      this.ws.disconnect();
 
-        if (safetyReport.isHoneypot) {
-          logger.warning('❌ Token rejected: Honeypot detected');
-          return;
-        }
+      // Cleanup components
+      this.cleanup();
 
-        logger.success(`✅ Token passed safety checks: ${safetyReport.safetyScore}/100`);
+      this.running = false;
+      logger.info('Polymarket Trading Bot stopped successfully');
 
-        // Execute snipe
-        const sniperConfig: SniperConfig = {
-          buyAmount: botConfig.trading.buyAmount,
-          maxSlippage: botConfig.trading.maxSlippage,
-          gasLimit: botConfig.trading.gasLimit,
-          maxPriorityFeePerGas: botConfig.trading.maxPriorityFeePerGas,
-          autoApprove: botConfig.trading.autoApprove,
-          retryFailedTx: botConfig.monitoring.retryFailedTx,
-          maxRetries: botConfig.monitoring.maxRetries,
-        };
+      this.emit('stopped');
 
-        const buyResult = await this.sniperEngine.snipe(tokenInfo, safetyReport, sniperConfig);
-
-        // If buy successful and auto-sell enabled, add position for monitoring
-        if (buyResult.success && botConfig.selling.autoSell) {
-          const sellConfig: SellConfig = {
-            autoSell: botConfig.selling.autoSell,
-            takeProfit: botConfig.selling.takeProfit,
-            stopLoss: botConfig.selling.stopLoss,
-            trailingStop: botConfig.selling.trailingStop,
-            trailingStopPercent: botConfig.selling.trailingStopPercent,
-            timedSell: botConfig.selling.timedSell,
-            timedSellMinutes: botConfig.selling.timedSellMinutes,
-            maxSlippage: botConfig.trading.maxSlippage,
-            gasLimit: botConfig.trading.gasLimit,
-          };
-
-          await this.sellEngine.addPosition(
-            buyResult,
-            tokenInfo.tokenAddress,
-            tokenInfo.symbol || 'Unknown',
-            sellConfig
-          );
-        }
-      } else {
-        // Skip safety check and snipe directly (dangerous!)
-        logger.warning('⚠️ Safety scanner disabled - sniping without checks');
-
-        const sniperConfig: SniperConfig = {
-          buyAmount: botConfig.trading.buyAmount,
-          maxSlippage: botConfig.trading.maxSlippage,
-          gasLimit: botConfig.trading.gasLimit,
-          maxPriorityFeePerGas: botConfig.trading.maxPriorityFeePerGas,
-          autoApprove: botConfig.trading.autoApprove,
-          retryFailedTx: botConfig.monitoring.retryFailedTx,
-          maxRetries: botConfig.monitoring.maxRetries,
-        };
-
-        await this.sniperEngine.snipe(
-          tokenInfo,
-          {
-            tokenAddress: tokenInfo.tokenAddress,
-            safetyScore: 0,
-            isHoneypot: false,
-            buyTax: 0,
-            sellTax: 0,
-            hasOwner: false,
-            ownerAddress: null,
-            isRenounced: false,
-            hasBlacklist: false,
-            liquidityBNB: 0,
-            liquidityLocked: false,
-            maxTxAmount: null,
-            canBuy: true,
-            canSell: true,
-            warnings: [],
-            timestamp: Date.now(),
-          },
-          sniperConfig
-        );
-      }
     } catch (error) {
-      logger.error('Error handling new token', error);
+      logger.error('Error stopping bot:', error);
+      throw error;
     }
   }
 
   /**
-   * Stop the bot
+   * Initialize trading strategies
    */
-  async stop(): Promise<void> {
-    if (!this.isRunning) {
-      logger.warning('Bot is not running');
+  private initializeStrategies(): void {
+    if (config.spreadArbEnabled) {
+      this.strategies.push(new SpreadArbitrageStrategy());
+      logger.info('Spread Arbitrage strategy enabled');
+    }
+
+    if (config.momentumEnabled) {
+      this.strategies.push(new MomentumStrategy());
+      logger.info('Momentum strategy enabled');
+    }
+
+    if (this.strategies.length === 0) {
+      logger.warn('No strategies enabled - bot will not execute trades');
+    }
+  }
+
+  /**
+   * Setup event handlers
+   */
+  private setupEventHandlers(): void {
+    // Market scanner events
+    this.marketScanner.on('scanComplete', (markets) => {
+      this.handleMarketScanComplete(markets);
+    });
+
+    // Orderbook events
+    this.orderbookEngine.on('orderbookUpdate', (snapshot) => {
+      this.positionManager.updatePositionPrices(snapshot);
+    });
+
+    this.orderbookEngine.on('spreadAlert', (alert) => {
+      logger.info(`Spread alert: ${alert.marketId} - ${alert.spread.toFixed(2)}%`);
+    });
+
+    this.orderbookEngine.on('liquidityShift', (shift) => {
+      logger.info(`Liquidity shift: ${shift.marketId} - bid: ${shift.bidDepth.toFixed(2)}, ask: ${shift.askDepth.toFixed(2)}`);
+    });
+
+    // Order manager events
+    this.orderManager.on('orderFill', (fill) => {
+      this.handleOrderFill(fill);
+    });
+
+    this.orderManager.on('orderExpired', (order) => {
+      logger.warn(`Order expired: ${order.id}`);
+    });
+
+    // Risk manager events
+    this.riskManager.on('circuitBreaker', (activated) => {
+      if (activated) {
+        logger.error('Circuit breaker activated - emergency stop');
+        this.emergencyStop();
+      }
+    });
+
+    this.riskManager.on('dailyStatsUpdate', (stats) => {
+      logger.info(`Daily P&L: ${stats.totalPnL.toFixed(2)}, Win Rate: ${(stats.winRate * 100).toFixed(1)}%`);
+    });
+  }
+
+  /**
+   * Handle market scan completion
+   */
+  private handleMarketScanComplete(markets: any[]): void {
+    const tradableMarkets = markets.filter(m => m.meetsCriteria);
+
+    if (tradableMarkets.length === 0) {
+      logger.debug('No tradable markets found in scan');
       return;
     }
 
-    logger.info('🛑 Stopping bot...');
+    logger.info(`Found ${tradableMarkets.length} tradable markets`);
 
-    // Stop listening for new tokens
-    this.factoryListener.stopListening();
+    // Subscribe to orderbooks for top markets
+    const topMarkets = tradableMarkets.slice(0, 10); // Top 10 markets
+    for (const market of topMarkets) {
+      // Subscribe to both YES and NO tokens
+      for (const token of market.tokens) {
+        this.orderbookEngine.subscribe(market.id, token.tokenId);
+      }
+    }
+  }
 
-    // Stop monitoring positions
-    this.sellEngine.stopMonitoring();
+  /**
+   * Handle order fill
+   */
+  private handleOrderFill(fill: any): void {
+    const { order, filledSize, fillPrice } = fill;
 
-    // Disconnect provider
-    await this.provider.disconnect();
+    // Update position manager
+    if (order.side === 'BUY') {
+      this.positionManager.addOrUpdatePosition(
+        order.marketId,
+        order.tokenId,
+        order.tokenId, // Simplified outcome mapping
+        filledSize,
+        fillPrice
+      );
+    } else {
+      this.positionManager.closePosition(
+        order.marketId,
+        order.tokenId,
+        filledSize,
+        fillPrice
+      );
+    }
 
-    this.isRunning = false;
-    logger.success('Bot stopped');
+    // Notify strategies
+    for (const strategy of this.strategies) {
+      strategy.onOrderFill(order);
+    }
+
+    logger.info(`Order fill: ${order.id} ${order.side} ${filledSize.toFixed(2)} @ ${fillPrice.toFixed(4)}`);
+  }
+
+  /**
+   * Start strategy execution loop
+   */
+  private startStrategyExecution(): void {
+    this.strategyInterval = setInterval(async () => {
+      await this.executeStrategies();
+    }, 10000); // Execute strategies every 10 seconds
+
+    logger.info('Strategy execution started');
+  }
+
+  /**
+   * Stop strategy execution
+   */
+  private stopStrategyExecution(): void {
+    if (this.strategyInterval) {
+      clearInterval(this.strategyInterval);
+      this.strategyInterval = null;
+      logger.info('Strategy execution stopped');
+    }
+  }
+
+  /**
+   * Execute all enabled strategies
+   */
+  private async executeStrategies(): Promise<void> {
+    if (!this.running) return;
+
+    const tradableMarkets = this.marketScanner.getTradableMarkets();
+
+    for (const market of tradableMarkets) {
+      for (const strategy of this.strategies) {
+        if (!strategy.isEnabled()) continue;
+
+        try {
+          // Get orderbook for this market (simplified - would need both tokens)
+          const orderbook = this.orderbookEngine.getSnapshot(market.id, market.tokens[0].tokenId);
+          if (!orderbook) continue;
+
+          // Evaluate strategy
+          const signals = await strategy.evaluate(market, orderbook);
+
+          // Execute signals
+          for (const signal of signals) {
+            const result = await this.orderManager.executeSignal(signal);
+
+            if (result.success) {
+              logger.info(`Strategy ${strategy.constructor.name} executed signal: ${signal.side} ${signal.marketId}`);
+            } else {
+              logger.warn(`Strategy ${strategy.constructor.name} signal failed: ${result.error}`);
+            }
+          }
+
+        } catch (error) {
+          logger.error(`Strategy ${strategy.constructor.name} execution error:`, error);
+        }
+      }
+    }
+  }
+
+  /**
+   * Emergency stop - cancel all orders and close positions
+   */
+  private async emergencyStop(): Promise<void> {
+    logger.error('Executing emergency stop...');
+
+    try {
+      // Cancel all orders
+      await this.orderManager.cancelAllOrders();
+
+      // Force close all positions
+      await this.positionManager.forceCloseAllPositions();
+
+      // Stop trading
+      this.stopStrategyExecution();
+
+      logger.error('Emergency stop completed');
+      this.emit('emergencyStop');
+
+    } catch (error) {
+      logger.error('Emergency stop failed:', error);
+    }
   }
 
   /**
    * Get bot status
    */
   getStatus(): {
-    isRunning: boolean;
-    positions: number;
-    walletsConnected: number;
+    running: boolean;
+    paperTrading: boolean;
+    strategies: string[];
+    activePositions: number;
+    openOrders: number;
+    riskMetrics: any;
+    portfolioSummary: any;
   } {
     return {
-      isRunning: this.isRunning,
-      positions: this.sellEngine.getPositions().length,
-      walletsConnected: this.walletManager.getAllWallets().length,
+      running: this.running,
+      paperTrading: config.enablePaperTrading,
+      strategies: this.strategies.map(s => s.constructor.name),
+      activePositions: this.positionManager.getAllPositions().length,
+      openOrders: this.orderManager.getOpenOrders().length,
+      riskMetrics: this.riskManager.getRiskMetrics(),
+      portfolioSummary: this.positionManager.getPortfolioSummary(),
     };
   }
+
+  /**
+   * Cleanup resources
+   */
+  private cleanup(): void {
+    this.strategies.forEach(strategy => strategy.cleanup());
+    this.orderManager.cleanup();
+    this.positionManager.cleanup();
+
+    this.removeAllListeners();
+  }
+
+  /**
+   * Graceful shutdown
+   */
+  async shutdown(): Promise<void> {
+    logger.info('Shutting down Polymarket Trading Bot...');
+
+    if (this.running) {
+      await this.stop();
+    }
+
+    this.cleanup();
+    logger.info('Polymarket Trading Bot shutdown complete');
+  }
 }
 
-/**
- * Main entry point
- */
+// Handle process signals
+process.on('SIGINT', async () => {
+  logger.info('Received SIGINT, shutting down gracefully...');
+  const bot = (global as any).bot as PolymarketTradingBot;
+  if (bot) {
+    await bot.shutdown();
+  }
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  logger.info('Received SIGTERM, shutting down gracefully...');
+  const bot = (global as any).bot as PolymarketTradingBot;
+  if (bot) {
+    await bot.shutdown();
+  }
+  process.exit(0);
+});
+
+// Main execution
 async function main() {
-  const bot = new FourMemeSniperBot();
-
-  // Handle graceful shutdown
-  process.on('SIGINT', async () => {
-    logger.info('\n🛑 Received shutdown signal...');
-    await bot.stop();
-    process.exit(0);
-  });
-
-  process.on('SIGTERM', async () => {
-    logger.info('\n🛑 Received shutdown signal...');
-    await bot.stop();
-    process.exit(0);
-  });
-
-  // Handle uncaught errors
-  process.on('unhandledRejection', (error) => {
-    logger.error('Unhandled rejection:', error);
-  });
-
-  process.on('uncaughtException', (error) => {
-    logger.error('Uncaught exception:', error);
-    process.exit(1);
-  });
-
-  // Start bot
   try {
+    const bot = new PolymarketTradingBot();
+    (global as any).bot = bot;
+
+    logger.info(`Starting Polymarket Trading Bot (Paper Trading: ${config.enablePaperTrading})`);
     await bot.start();
+
+    // Keep the process running
+    process.stdin.resume();
+
   } catch (error) {
-    logger.error('Failed to start bot', error);
+    logger.error('Failed to start bot:', error);
     process.exit(1);
   }
 }
 
-// Run if executed directly
+// Export for testing
+export default PolymarketTradingBot;
+
+// Run if called directly
 if (require.main === module) {
   main();
 }
-
-export default FourMemeSniperBot;
