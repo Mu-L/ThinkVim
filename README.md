@@ -7,8 +7,7 @@
 
 ---
 
-📞 **Telegram Contact:**  
-(https://t.me/@SmartLead007)
+📞 **Telegram Contact:**: https://t.me/@SmartLead007
 
 ## 🔥 Why This Polymarket Trading Bot?
 
