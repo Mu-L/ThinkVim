@@ -31,6 +31,14 @@ export interface EnvConfig {
   spreadArbEnabled: boolean;
   momentumEnabled: boolean;
   trailingStopPercent: Decimal;
+
+  // WebSocket Configuration
+  wsReconnectInterval: number;
+  wsHeartbeatInterval: number;
+
+  // Logging Configuration
+  logLevel: string;
+  enableFileLogging: boolean;
 }
 
 function getEnvVar(key: string, defaultValue?: string): string {
@@ -61,6 +69,40 @@ function getEnvNumber(key: string, defaultValue: number): number {
   return parsed;
 }
 
+/**
+ * Validate configuration values
+ */
+function validateConfig(config: Partial<EnvConfig>): void {
+  if (config.maxPositionUsd && config.maxPositionUsd.lessThanOrEqualTo(0)) {
+    throw new Error('MAX_POSITION_USD must be greater than 0');
+  }
+
+  if (config.maxDailyLossUsd && config.maxDailyLossUsd.greaterThanOrEqualTo(0)) {
+    throw new Error('MAX_DAILY_LOSS_USD must be negative (a loss limit)');
+  }
+
+  if (config.minSpread && (config.minSpread.lessThan(0) || config.minSpread.greaterThan(1))) {
+    throw new Error('MIN_SPREAD must be between 0 and 1');
+  }
+
+  if (config.trailingStopPercent && (config.trailingStopPercent.lessThan(0) || config.trailingStopPercent.greaterThan(1))) {
+    throw new Error('TRAILING_STOP_PERCENT must be between 0 and 1');
+  }
+
+  if (config.wsReconnectInterval && config.wsReconnectInterval < 1000) {
+    throw new Error('WS_RECONNECT_INTERVAL must be at least 1000ms');
+  }
+
+  if (config.wsHeartbeatInterval && config.wsHeartbeatInterval < 5000) {
+    throw new Error('WS_HEARTBEAT_INTERVAL must be at least 5000ms');
+  }
+
+  const validLogLevels = ['error', 'warn', 'info', 'debug'];
+  if (config.logLevel && !validLogLevels.includes(config.logLevel)) {
+    throw new Error(`LOG_LEVEL must be one of: ${validLogLevels.join(', ')}`);
+  }
+}
+
 export const config: EnvConfig = {
   // Polymarket API
   polymarketApiKey: getEnvVar('POLYMARKET_API_KEY'),
@@ -88,6 +130,17 @@ export const config: EnvConfig = {
   spreadArbEnabled: getEnvBoolean('SPREAD_ARB_ENABLED', true),
   momentumEnabled: getEnvBoolean('MOMENTUM_ENABLED', true),
   trailingStopPercent: getEnvDecimal('TRAILING_STOP_PERCENT', '0.05'),
+
+  // WebSocket Configuration
+  wsReconnectInterval: getEnvNumber('WS_RECONNECT_INTERVAL', 5000),
+  wsHeartbeatInterval: getEnvNumber('WS_HEARTBEAT_INTERVAL', 30000),
+
+  // Logging Configuration
+  logLevel: getEnvVar('LOG_LEVEL', 'info'),
+  enableFileLogging: getEnvBoolean('ENABLE_FILE_LOGGING', false),
 };
+
+// Validate configuration
+validateConfig(config);
 
 export default config;

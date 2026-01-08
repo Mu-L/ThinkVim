@@ -11,6 +11,23 @@ import PositionManager from './trader/positionManager';
 import config from './config/env';
 import logger from './utils/logger';
 
+/**
+ * Main trading bot class for Polymarket prediction markets
+ *
+ * This bot implements automated trading strategies including spread arbitrage
+ * and momentum trading. It connects to Polymarket's WebSocket API for real-time
+ * market data and manages risk through configurable limits and circuit breakers.
+ *
+ * @example
+ * ```typescript
+ * const bot = new PolymarketTradingBot();
+ * await bot.start();
+ * ```
+ *
+ * @fires started - Emitted when the bot successfully starts
+ * @fires stopped - Emitted when the bot stops
+ * @fires emergencyStop - Emitted when emergency stop is triggered
+ */
 class PolymarketTradingBot extends EventEmitter {
   private api: PolymarketAPI;
   private ws: PolymarketWebSocket;
@@ -52,7 +69,13 @@ class PolymarketTradingBot extends EventEmitter {
   }
 
   /**
-   * Start the trading bot
+   * Start the trading bot and all its components
+   *
+   * This method initializes the WebSocket connection, starts market scanning,
+   * synchronizes positions, and begins strategy execution.
+   *
+   * @throws {Error} If the bot fails to start due to connection or initialization issues
+   * @returns {Promise<void>} Resolves when the bot is fully started
    */
   async start(): Promise<void> {
     if (this.running) {
@@ -87,7 +110,13 @@ class PolymarketTradingBot extends EventEmitter {
   }
 
   /**
-   * Stop the trading bot
+   * Stop the trading bot and clean up resources
+   *
+   * This method cancels all open orders, stops strategy execution,
+   * disconnects from WebSocket, and performs cleanup operations.
+   *
+   * @throws {Error} If the bot fails to stop gracefully
+   * @returns {Promise<void>} Resolves when the bot is fully stopped
    */
   async stop(): Promise<void> {
     if (!this.running) {
@@ -327,7 +356,16 @@ class PolymarketTradingBot extends EventEmitter {
   }
 
   /**
-   * Get bot status
+   * Get comprehensive status information about the bot
+   *
+   * @returns {Object} Status object containing:
+   *   - running: Whether the bot is currently running
+   *   - paperTrading: Whether paper trading mode is enabled
+   *   - strategies: Array of enabled strategy names
+   *   - activePositions: Number of active positions
+   *   - openOrders: Number of open orders
+   *   - riskMetrics: Current risk management metrics
+   *   - portfolioSummary: Summary of portfolio performance
    */
   getStatus(): {
     running: boolean;

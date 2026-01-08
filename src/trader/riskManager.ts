@@ -58,9 +58,10 @@ export class RiskManager extends EventEmitter {
    * Check if a trade signal passes risk management rules
    */
   checkTradeSignal(signal: TradeSignal): RiskCheckResult {
-    const warnings: string[] = [];
-    let approved = true;
-    let adjustedSize = signal.size;
+    try {
+      const warnings: string[] = [];
+      let approved = true;
+      let adjustedSize = signal.size;
 
     // Circuit breaker check
     if (this.circuitBreaker) {
@@ -155,30 +156,51 @@ export class RiskManager extends EventEmitter {
       };
     }
 
-    return {
-      approved,
-      adjustedSize,
-      warnings,
-    };
+      return {
+        approved,
+        adjustedSize,
+        warnings,
+      };
+    } catch (error) {
+      logger.error('Error in risk check:', error);
+      return {
+        approved: false,
+        reason: `Risk check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        warnings: [],
+      };
+    }
   }
 
   /**
    * Record a new position
    */
   recordPosition(marketId: string, tokenId: string, size: Decimal, entryPrice: Decimal): void {
-    const positionKey = `${marketId}:${tokenId}`;
+    try {
+      if (!marketId || !tokenId || !size || !entryPrice) {
+        throw new Error('Invalid position parameters provided');
+      }
 
-    this.positions.set(positionKey, {
-      marketId,
-      tokenId,
-      size,
-      entryPrice,
-      currentPrice: entryPrice,
-      unrealizedPnL: new Decimal(0),
-      riskPercent: size.div(config.maxPositionUsd).mul(100),
-    });
+      if (size.lessThanOrEqualTo(0) || entryPrice.lessThanOrEqualTo(0)) {
+        throw new Error('Position size and entry price must be positive');
+      }
 
-    logger.info(`Recorded position: ${positionKey}, size: ${size.toFixed(2)}, price: ${entryPrice.toFixed(4)}`);
+      const positionKey = `${marketId}:${tokenId}`;
+
+      this.positions.set(positionKey, {
+        marketId,
+        tokenId,
+        size,
+        entryPrice,
+        currentPrice: entryPrice,
+        unrealizedPnL: new Decimal(0),
+        riskPercent: size.div(config.maxPositionUsd).mul(100),
+      });
+
+      logger.info(`Recorded position: ${positionKey}, size: ${size.toFixed(2)}, price: ${entryPrice.toFixed(4)}`);
+    } catch (error) {
+      logger.error('Error recording position:', error);
+      throw error;
+    }
   }
 
   /**
@@ -201,43 +223,60 @@ export class RiskManager extends EventEmitter {
    * Close a position and record P&L
    */
   closePosition(marketId: string, tokenId: string, exitPrice: Decimal, size?: Decimal): void {
-    const positionKey = `${marketId}:${tokenId}`;
-    const position = this.positions.get(positionKey);
+    try {
+      if (!marketId || !tokenId || !exitPrice) {
+        throw new Error('Invalid close position parameters provided');
+      }
 
-    if (!position) {
-      logger.warn(`Attempted to close non-existent position: ${positionKey}`);
-      return;
+      if (exitPrice.lessThanOrEqualTo(0)) {
+        throw new Error('Exit price must be positive');
+      }
+
+      const positionKey = `${marketId}:${tokenId}`;
+      const position = this.positions.get(positionKey);
+
+      if (!position) {
+        logger.warn(`Attempted to close non-existent position: ${positionKey}`);
+        return;
+      }
+
+      const closedSize = size || position.size;
+      if (closedSize.lessThanOrEqualTo(0) || closedSize.greaterThan(position.size)) {
+        throw new Error('Invalid close size');
+      }
+
+      const pnl = closedSize.mul(exitPrice.minus(position.entryPrice));
+
+      // Record trade
+      this.recordTrade({
+        timestamp: Date.now(),
+        marketId,
+        tokenId,
+        side: 'SELL', // Assuming we're closing
+        size: closedSize,
+        price: exitPrice,
+        pnl,
+      });
+
+      // Update position size
+      position.size = position.size.minus(closedSize);
+      if (position.size.lessThanOrEqualTo(0)) {
+        this.positions.delete(positionKey);
+      }
+
+      // Update daily stats
+      this.updateDailyStats(pnl);
+
+      // Check for loss and apply cooldown if needed
+      if (pnl.isNegative()) {
+        this.applyCooldown(marketId);
+      }
+
+      logger.info(`Closed position: ${positionKey}, P&L: ${pnl.toFixed(4)}, remaining size: ${position.size.toFixed(2)}`);
+    } catch (error) {
+      logger.error('Error closing position:', error);
+      throw error;
     }
-
-    const closedSize = size || position.size;
-    const pnl = closedSize.mul(exitPrice.minus(position.entryPrice));
-
-    // Record trade
-    this.recordTrade({
-      timestamp: Date.now(),
-      marketId,
-      tokenId,
-      side: 'SELL', // Assuming we're closing
-      size: closedSize,
-      price: exitPrice,
-      pnl,
-    });
-
-    // Update position size
-    position.size = position.size.minus(closedSize);
-    if (position.size.lessThanOrEqualTo(0)) {
-      this.positions.delete(positionKey);
-    }
-
-    // Update daily stats
-    this.updateDailyStats(pnl);
-
-    // Check for loss and apply cooldown if needed
-    if (pnl.isNegative()) {
-      this.applyCooldown(marketId);
-    }
-
-    logger.info(`Closed position: ${positionKey}, P&L: ${pnl.toFixed(4)}, remaining size: ${position.size.toFixed(2)}`);
   }
 
   /**
