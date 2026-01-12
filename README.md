@@ -1,8 +1,8 @@
-# 🚀 Polymarket Trading Bot
+# 🚀 Polymarket Copy Trading Bot
 
 ### Automated Prediction Market Trading • Copy Trading • Strategy Engine
 
-> **Polymarket Trading Bot** is a production-ready, open-source **automated Polymarket trading bot** built for **prediction market trading**, **copy trading**, and **algorithmic strategies** using the Polymarket CLOB API.
+> **Polymarket Copy Trading Bot** is a production-ready, open-source **automated Polymarket trading bot** built for **prediction market trading**, **copy trading**, and **algorithmic strategies** using the Polymarket CLOB API.
 > It supports **real-time orderbook trading**, **wallet copy trading**, **risk-managed execution**, and **pluggable strategies**, making it one of the most advanced Polymarket bots available on GitHub.
 
 ---
