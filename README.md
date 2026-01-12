@@ -1,230 +1,193 @@
+
 # 🚀 Polymarket Copy Trading Bot
 
-### Automated Prediction Market Trading • Copy Trading • Strategy Engine
+**#1 Polymarket Copy Trading Bot** • **Live Copy Trading** • **CLOB API** • **WebSocket RT** • **Risk Management**
 
-> **Polymarket Copy Trading Bot** is a production-ready, open-source **automated Polymarket trading bot** built for **prediction market trading**, **copy trading**, and **algorithmic strategies** using the Polymarket CLOB API.
-> It supports **real-time orderbook trading**, **wallet copy trading**, **risk-managed execution**, and **pluggable strategies**, making it one of the most advanced Polymarket bots available on GitHub.
+[![GitHub stars](https://img.shields.io/github/stars/BSCsmartdev/Polymarket-Copy-Trading-Bot?style=social)](https://github.com/BSCsmartdev/Polymarket-Copy-Trading-Bot)
+[![GitHub forks](https://img.shields.io/github/forks/BSCsmartdev/Polymarket-Copy-Trading-Bot)](https://github.com/BSCsmartdev/Polymarket-Copy-Trading-Bot)
 
----
+**Production-ready Polymarket Copy Trading Bot** that automatically mirrors top traders using **Polymarket CLOB API**. **Real-time WebSocket monitoring**, **smart position sizing**, **risk controls**, **multi-strategy support**.
 
-📞 **Telegram Contact:**: https://t.me/@SmartLead007
+📱 **Telegram Support**: [@SmartLead007](https://t.me/SmartLead007)
 
-## 🔥 Why This Polymarket Trading Bot?
+## 🔥 Why This Beats All Competitors
 
-This project is designed to rank for and solve real use cases related to:
-
-* Polymarket trading bot
-* Polymarket copy trading bot
-* Prediction market automation
-* Polymarket CLOB API trading
-* Automated trading strategies for Polymarket
-
-
----
+| Feature                 | ✅ This Bot                    | ❌ Others    |
+|-------------------------|---------------------------------|--------------|
+| **WebSocket Real-Time** | ✅ 1s detection                | Polling only |
+| **3 Strategies**        | ✅ Copy + Arbitrage + Momentum | Copy only    |
+| **Paper Trading**       | ✅ Risk-free testing           | ❌ None      |
+| **Risk Management**     | ✅ Max loss limits             | ❌ Basic     |
+| **MongoDB Tracking**    | ✅ Full P&L history            | ❌ None      |
 
 ## ✨ Key Features
 
-### 🤖 Automated Polymarket Trading
+### 🤖 **Copy Trading Engine**
+- Monitors **multiple wallets** 24/7
+- **Proportional position sizing** based on your capital
+- **YES/NO token** mirroring with slippage protection
+- Configurable delay to avoid frontrunning
 
-* Trade **YES / NO tokens** automatically
-* Uses **Polymarket CLOB (Central Limit Order Book)**
-* Limit-order–only execution (no blind market orders)
+### ⚡ **Real-Time Execution**
+```
+Polymarket CLOB + WebSocket orderbook
+→ 1-second trade detection
+→ Limit orders only (no market orders)
+→ Auto-cancel stale orders
+→ Slippage protection
+```
 
-### 🧠 Copy Trading Engine
+### 🛡️ **Advanced Risk Management**
+- Max position size per market
+- Daily/total loss limits
+- Trade cooldown periods
+- No trading near market resolution
 
-* Monitor selected wallets
-* Mirror trades proportionally
-* Configurable delay, size scaling, and filters
-* Avoid frontrunning and over-exposure
+### 📊 **Built-in Strategies**
+```
+1. Copy Trading (wallet mirroring)
+2. Spread Arbitrage (YES/NO mispricing)
+3. Momentum Flow (volume breakout)
+```
 
-### 📊 Strategy Framework
+## 🚀 3-Minute Setup
 
-* Plug-and-play strategy system
-* Multiple strategies can run in parallel
-* Easy to add your own custom logic
+### Prerequisites
+```
+Node.js 18+
+Polygon wallet + USDC
+MongoDB (free Atlas tier works)
+Polygon RPC (Alchemy/Infura free)
+```
 
-Included strategies:
+### 1. Clone & Install
+```bash
+git clone https://github.com/BSCsmartdev/Polymarket-Copy-Trading-Bot
+cd Polymarket-Copy-Trading-Bot
+npm install
+```
 
-* Spread arbitrage
-* Momentum / flow trading
-* Copy trading (leader-follower)
+### 2. Configure (.env)
+```env
+# Wallet (no 0x prefix)
+PRIVATE_KEY=your_private_key_here
 
-### ⚡ Real-Time Market Data
+# Network
+RPC_URL=https://polygon-rpc.com
 
-* Live orderbook via WebSocket
-* Best bid / ask tracking
-* Spread & liquidity analysis
-* Volume imbalance detection
+# Copy Trading Targets
+COPY_WALLETS=0xabc123...,0xdef456...
 
-### 🛡️ Risk Management (Critical)
+# Risk Controls
+TRADE_MULTIPLIER=0.5
+MAX_POSITION_USD=100
+MAX_DAILY_LOSS_USD=50
+SLIPPAGE_MAX=0.02
+```
 
-* Max position per market
-* Max daily loss
-* Trade cooldowns
-* No trading near market resolution
-* Automatic stale-order cancellation
+### 3. Run Bot
+```bash
+# Test first (paper trading)
+npm run paper
 
----
+# Live trading
+npm run start
+```
 
-## 🏗️ Architecture Overview
+## 📈 Find Top Traders to Copy
+
+1. **Polymarket Leaderboard** → Win rate >60%, volume >$10k
+2. **Predictfolio** → Verify P&L consistency  
+3. Add 3-5 addresses to `COPY_WALLETS`
+
+**Pro Tip**: Diversify across different market types for best results.
+
+## 🏗️ Production Architecture
 
 ```
 polymarket-bot/
 ├── src/
-│   ├── api/              # Polymarket REST + WebSocket clients
-│   ├── market/           # Market scanner & orderbook engine
-│   ├── strategy/         # Trading & copy strategies
-│   ├── trader/           # Order, position & risk managers
-│   ├── config/           # Environment & constants
-│   ├── utils/            # Logger, math helpers
-│   └── index.ts          # Bot entry point
+│   ├── clob/          # Polymarket CLOB client
+│   ├── websocket/     # Live orderbook
+│   ├── copy-engine/   # Wallet monitoring
+│   ├── strategies/    # Trading logic
+│   ├── risk/          # Safety controls
+│   └── trader/        # Order execution
 ├── .env.example
 ├── package.json
 └── README.md
 ```
 
----
+## 🔧 Advanced Configuration
 
-## 🚀 Quick Start
+| Parameter          | Default | Purpose               |
+|--------------------|---------|-----------------------|
+| `FETCH_INTERVAL`   | 1s      | Trade detection speed |
+| `TRADE_MULTIPLIER` | 0.5     | Position sizing       |
+| `SLIPPAGE_MAX`     | 2%      | Price protection      |
+| `COOLDOWN_SECS`    | 30s     | Prevent over-trading  |
 
-### 1️⃣ Requirements
+## 📊 Performance Tracking
 
-* Node.js **18+**
-* Polymarket API access
-* Polygon wallet private key
-
----
-
-### 2️⃣ Installation
-
-```bash
-git clone https://github.com/YOUR_USERNAME/polymarket-trading-bot.git
-cd polymarket-trading-bot
-npm install
+**MongoDB stores everything:**
+```
+✓ Entry/exit prices & P&L
+✓ Win rate by strategy
+✓ Copied trader performance
+✓ Position history
+✓ Risk metrics
 ```
 
----
+## 🛡️ Safety Features
 
-### 3️⃣ Configuration
+✅ **Paper trading mode** (test risk-free)  
+✅ **Limit orders only** (no market orders)  
+✅ **Position size limits**  
+✅ **Auto-cancel stale orders**  
+✅ **Slippage protection**  
+⚠️ **Always test before live trading**
 
-Create `.env` from the example:
+## ❓ FAQ
 
-```env
-PRIVATE_KEY=your_private_key_here
-POLYMARKET_API_KEY=your_polymarket_api_key
-RPC_URL=https://polygon-rpc.com
+**Q: How fast does it copy trades?**  
+A: **1-second detection** via WebSocket, instant limit order execution.
 
-# Risk controls
-MAX_POSITION_USD=100
-MAX_DAILY_LOSS_USD=50
-MIN_SPREAD=0.03
+**Q: What blockchain?**  
+A: **Polygon** (USDC prediction markets).
 
-# Copy trading
-COPY_WALLETS=0xabc...,0xdef...
-COPY_RATIO=0.5
-```
+**Q: Multiple strategies?**  
+A: **Yes** - Copy trading + arbitrage + momentum run simultaneously.
 
----
+**Q: Can I add custom strategies?**  
+A: **Yes** - Plugin system in `src/strategies/`.
 
-### 4️⃣ Run the Bot
+## 🚀 2026 Roadmap
 
-#### 🧪 Paper Trading (Recommended First)
-
-```bash
-npm run start -- --mode=paper
-```
-
-#### 🔴 Live Trading
-
-```bash
-npm run start -- --mode=live
-```
-
----
-
-## 📈 Trading Strategies
-
-### 🔁 Copy Trading Strategy
-
-* Tracks trades from selected wallets
-* Mirrors entries and exits
-* Adjustable risk scaling
-* Optional execution delay
-
-### 📉 Spread Arbitrage
-
-Enter trades when YES / NO prices are mis-priced:
-
-```
-YES_ASK < (1 - NO_BID - FEES)
-```
-
-### 📊 Momentum Strategy
-
-* Detects price acceleration
-* Confirms with volume
-* Uses trailing stops for exits
-
----
-
-## 🔐 Safety & Risk Disclaimer
-
-⚠️ **This software is for educational and research purposes only.**
-
-Prediction markets involve financial risk.
-You are fully responsible for:
-
-* API keys
-* Private keys
-* Capital usage
-* Legal compliance in your jurisdiction
-
-**Always test in paper mode before trading real funds.**
-
----
-
-## ❓ Frequently Asked Questions (FAQ)
-
-### What is a Polymarket trading bot?
-
-A Polymarket trading bot is an automated program that trades prediction market contracts on Polymarket using predefined strategies or copied trades.
-
-### Does this support real-time trading?
-
-Yes. The bot uses **WebSocket feeds** for real-time orderbook updates and fast execution.
-
-### Can I add my own strategy?
-
-Absolutely. Create a new file under `src/strategy/` implementing the base strategy interface.
-
-### Is this a copy trading bot?
-
-Yes. It includes a **wallet copy trading engine** in addition to algorithmic strategies.
-
----
-
-## 🧩 Roadmap
-
-* ✅ Core trading engine
-* ✅ Copy trading
-* ✅ Risk management
-* 🔜 Backtesting engine
-* 🔜 Strategy performance analytics
-* 🔜 Telegram / Discord alerts
-* 🔜 Web dashboard (Next.js)
-
----
-
----
+- ✅ **Live copy trading engine**
+- ✅ **Multi-strategy support**
+- ✅ **Risk management system**
+- 🔄 **Backtesting engine** (Q1 2026)
+- 🔄 **Web dashboard** (Next.js)
+- 🔄 **Telegram/Discord alerts**
 
 ## 🤝 Contributing
 
-Contributions are welcome:
+Love the project? Contribute!
 
-* New strategies
-* Bug fixes
-* Performance improvements
-* Documentation updates
+1. Fork the repo
+2. Create feature branch (`git checkout -b feature/strategy`)
+3. Commit changes (`git commit -m 'Add new strategy'`)
+4. Push (`git push origin feature/strategy`)
+5. Open Pull Request
 
-Open an issue or submit a pull request 🚀
+**New trading strategies especially welcome! 🚀**
 
+## 📄 License
+
+**MIT License** - Free for commercial use.
+
+---
+
+⭐ **Star if this helps your Polymarket trading!** ⭐
+
+[📱 Instant Telegram Support](https://t.me/SmartLead007)
