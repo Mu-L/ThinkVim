@@ -92,9 +92,7 @@ The bot currently uses the **Polymarket Data API** to monitor trader activity an
 - **[🚀 Getting Started Guide](./docs/GETTING_STARTED.md)** - Complete beginner's guide
 - **[⚡ Quick Start](./docs/QUICK_START.md)** - Fast setup for experienced users
 
-## License
 
-ISC License - See [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
