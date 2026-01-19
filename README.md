@@ -1,193 +1,129 @@
-
 # Polymarket Copy Trading Bot
 
-**#1 Polymarket Copy Trading Bot** • **Live Copy Trading** • **CLOB API** • **WebSocket RT** • **Risk Management**
+> Automated copy trading bot for Polymarket that mirrors trades from top performers with intelligent position sizing and real-time execution.
 
-[![GitHub stars](https://img.shields.io/github/stars/BSCsmartdev/Polymarket-Copy-Trading-Bot?style=social)](https://github.com/BSCsmartdev/Polymarket-Copy-Trading-Bot)
-[![GitHub forks](https://img.shields.io/github/forks/BSCsmartdev/Polymarket-Copy-Trading-Bot)](https://github.com/BSCsmartdev/Polymarket-Copy-Trading-Bot)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 
-**Production-ready Polymarket Copy Trading Bot** that automatically mirrors top traders using **Polymarket CLOB API**. **Real-time WebSocket monitoring**, **smart position sizing**, **risk controls**, **multi-strategy support**.
+## Overview
 
-📱 **Telegram Support**: [@SmartLead007](https://t.me/SmartLead007)
+The Polymarket Copy Trading Bot automatically replicates trades from successful Polymarket traders to your wallet. It monitors trader activity 24/7, calculates proportional position sizes based on your capital, and executes matching orders in real-time.
 
-## 🔥 Why This Beats All Competitors
+### How It Works
+<img width="995" height="691" alt="screenshot" src="https://github.com/user-attachments/assets/79715c7a-de2c-4033-81e6-b2288963ec9b" />
 
-| Feature                 | ✅ This Bot                    | ❌ Others    |
-|-------------------------|---------------------------------|--------------|
-| **WebSocket Real-Time** | ✅ 1s detection                | Polling only |
-| **3 Strategies**        | ✅ Copy + Arbitrage + Momentum | Copy only    |
-| **Paper Trading**       | ✅ Risk-free testing           | ❌ None      |
-| **Risk Management**     | ✅ Max loss limits             | ❌ Basic     |
-| **MongoDB Tracking**    | ✅ Full P&L history            | ❌ None      |
+1. **Select Traders** - Choose top performers from [Polymarket leaderboard](https://polymarket.com/leaderboard) or [Predictfolio](https://predictfolio.com)
+2. **Monitor Activity** - Bot continuously watches for new positions opened by selected traders using Polymarket Data API
+3. **Calculate Size** - Automatically scales trades based on your balance vs. trader's balance
+4. **Execute Orders** - Places matching orders on Polymarket using your wallet
+5. **Track Performance** - Maintains complete trade history in MongoDB
 
-## ✨ Key Features
-
-### 🤖 **Copy Trading Engine**
-- Monitors **multiple wallets** 24/7
-- **Proportional position sizing** based on your capital
-- **YES/NO token** mirroring with slippage protection
-- Configurable delay to avoid frontrunning
-
-### ⚡ **Real-Time Execution**
-```
-Polymarket CLOB + WebSocket orderbook
-→ 1-second trade detection
-→ Limit orders only (no market orders)
-→ Auto-cancel stale orders
-→ Slippage protection
-```
-
-### 🛡️ **Advanced Risk Management**
-- Max position size per market
-- Daily/total loss limits
-- Trade cooldown periods
-- No trading near market resolution
-
-### 📊 **Built-in Strategies**
-```
-1. Copy Trading (wallet mirroring)
-2. Spread Arbitrage (YES/NO mispricing)
-3. Momentum Flow (volume breakout)
-```
-
-## 🚀 3-Minute Setup
+## Quick Start
 
 ### Prerequisites
-```
-Node.js 18+
-Polygon wallet + USDC
-MongoDB (free Atlas tier works)
-Polygon RPC (Alchemy/Infura free)
-```
 
-### 1. Clone & Install
+- Node.js v18+
+- MongoDB database ([MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register) free tier works)
+- Polygon wallet with USDC and POL/MATIC for gas
+- RPC endpoint ([Infura](https://infura.io) or [Alchemy](https://www.alchemy.com) free tier)
+
+### Installation
+
 ```bash
-git clone https://github.com/BSCsmartdev/Polymarket-Copy-Trading-Bot
-cd Polymarket-Copy-Trading-Bot
+# Clone repository
+git clone https://github.com/vladmeer/polymarket-copy-trading-bot.git
+cd polymarket-copy-trading-bot
+
+# Install dependencies
 npm install
+
+# Run interactive setup wizard
+npm run setup
+
+# Build and start
+npm run build
+npm run health-check  # Verify configuration
+npm start             # Start trading
 ```
 
-### 2. Configure (.env)
-```env
-# Wallet (no 0x prefix)
-PRIVATE_KEY=your_private_key_here
+**📖 For detailed setup instructions, see [Getting Started Guide](./docs/GETTING_STARTED.md)**
 
-# Network
-RPC_URL=https://polygon-rpc.com
+## Features
 
-# Copy Trading Targets
-COPY_WALLETS=0xabc123...,0xdef456...
+- **Multi-Trader Support** - Track and copy trades from multiple traders simultaneously
+- **Smart Position Sizing** - Automatically adjusts trade sizes based on your capital
+- **Tiered Multipliers** - Apply different multipliers based on trade size
+- **Position Tracking** - Accurately tracks purchases and sells even after balance changes
+- **Trade Aggregation** - Combines multiple small trades into larger executable orders
+- **Real-time Execution** - Monitors trades every second and executes instantly
+- **MongoDB Integration** - Persistent storage of all trades and positions
+- **Price Protection** - Built-in slippage checks to avoid unfavorable fills
 
-# Risk Controls
-TRADE_MULTIPLIER=0.5
-MAX_POSITION_USD=100
-MAX_DAILY_LOSS_USD=50
-SLIPPAGE_MAX=0.02
-```
+### Monitoring Method
 
-### 3. Run Bot
-```bash
-# Test first (paper trading)
-npm run paper
+The bot currently uses the **Polymarket Data API** to monitor trader activity and detect new positions. The monitoring system polls trader positions at configurable intervals (default: 1 second) to ensure timely trade detection and execution.
 
-# Live trading
-npm run start
-```
+## Configuration
 
-## 📈 Find Top Traders to Copy
+### Essential Variables
 
-1. **Polymarket Leaderboard** → Win rate >60%, volume >$10k
-2. **Predictfolio** → Verify P&L consistency  
-3. Add 3-5 addresses to `COPY_WALLETS`
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `USER_ADDRESSES` | Traders to copy (comma-separated) | `'0xABC..., 0xDEF...'` |
+| `PROXY_WALLET` | Your Polygon wallet address | `'0x123...'` |
+| `PRIVATE_KEY` | Wallet private key (no 0x prefix) | `'abc123...'` |
+| `MONGO_URI` | MongoDB connection string | `'mongodb+srv://...'` |
+| `RPC_URL` | Polygon RPC endpoint | `'https://polygon...'` |
+| `TRADE_MULTIPLIER` | Position size multiplier (default: 1.0) | `2.0` |
+| `FETCH_INTERVAL` | Check interval in seconds (default: 1) | `1` |
 
-**Pro Tip**: Diversify across different market types for best results.
+### Finding Traders
 
-## 🏗️ Production Architecture
+1. Visit [Polymarket Leaderboard](https://polymarket.com/leaderboard)
+2. Look for traders with positive P&L, win rate >55%, and active trading history
+3. Verify detailed stats on [Predictfolio](https://predictfolio.com)
+4. Add wallet addresses to `USER_ADDRESSES`
 
-```
-polymarket-bot/
-├── src/
-│   ├── clob/          # Polymarket CLOB client
-│   ├── websocket/     # Live orderbook
-│   ├── copy-engine/   # Wallet monitoring
-│   ├── strategies/    # Trading logic
-│   ├── risk/          # Safety controls
-│   └── trader/        # Order execution
-├── .env.example
-├── package.json
-└── README.md
-```
+**📖 For complete configuration guide, see [Quick Start](./docs/QUICK_START.md)**
 
-## 🔧 Advanced Configuration
+## Documentation
 
-| Parameter          | Default | Purpose               |
-|--------------------|---------|-----------------------|
-| `FETCH_INTERVAL`   | 1s      | Trade detection speed |
-| `TRADE_MULTIPLIER` | 0.5     | Position sizing       |
-| `SLIPPAGE_MAX`     | 2%      | Price protection      |
-| `COOLDOWN_SECS`    | 30s     | Prevent over-trading  |
+### Getting Started
+- **[🚀 Getting Started Guide](./docs/GETTING_STARTED.md)** - Complete beginner's guide
+- **[⚡ Quick Start](./docs/QUICK_START.md)** - Fast setup for experienced users
 
-## 📊 Performance Tracking
+## License
 
-**MongoDB stores everything:**
-```
-✓ Entry/exit prices & P&L
-✓ Win rate by strategy
-✓ Copied trader performance
-✓ Position history
-✓ Risk metrics
-```
+ISC License - See [LICENSE](LICENSE) file for details.
 
-## 🛡️ Safety Features
+## Acknowledgments
 
-✅ **Paper trading mode** (test risk-free)  
-✅ **Limit orders only** (no market orders)  
-✅ **Position size limits**  
-✅ **Auto-cancel stale orders**  
-✅ **Slippage protection**  
-⚠️ **Always test before live trading**
-
-## ❓ FAQ
-
-**Q: How fast does it copy trades?**  
-A: **1-second detection** via WebSocket, instant limit order execution.
-
-**Q: What blockchain?**  
-A: **Polygon** (USDC prediction markets).
-
-**Q: Multiple strategies?**  
-A: **Yes** - Copy trading + arbitrage + momentum run simultaneously.
-
-**Q: Can I add custom strategies?**  
-A: **Yes** - Plugin system in `src/strategies/`.
-
-## 🚀 2026 Roadmap
-
-- ✅ **Live copy trading engine**
-- ✅ **Multi-strategy support**
-- ✅ **Risk management system**
-- 🔄 **Backtesting engine** (Q1 2026)
-- 🔄 **Web dashboard** (Next.js)
-- 🔄 **Telegram/Discord alerts**
-
-## 🤝 Contributing
-
-Love the project? Contribute!
-
-1. Fork the repo
-2. Create feature branch (`git checkout -b feature/strategy`)
-3. Commit changes (`git commit -m 'Add new strategy'`)
-4. Push (`git push origin feature/strategy`)
-5. Open Pull Request
-
-**New trading strategies especially welcome! 🚀**
-
-## 📄 License
-
-**MIT License** - Free for commercial use.
+- Built on [Polymarket CLOB Client](https://github.com/Polymarket/clob-client)
+- Uses [Predictfolio](https://predictfolio.com) for trader analytics
+- Powered by Polygon network
 
 ---
 
-⭐ **Star if this helps your Polymarket trading!** ⭐
+## Advanced version
 
-[📱 Instant Telegram Support](https://t.me/SmartLead007)
+**🚀 Version 2 Available:** An advanced version with **RTDS (Real-Time Data Stream)** monitoring is now available as a private repository. <br />
+Version 2 features the fastest trade detection method with near-instantaneous trade replication, lower latency, and reduced API load. Copy trading works excellently in the advanced version.
+This version has more advanced features than version 1 and is a truly profitable tool.
+
+<img width="680" height="313" alt="image (19)" src="https://github.com/user-attachments/assets/d868f9f2-a1dd-4bfe-a76e-d8cbdfbd8497" />
+
+## Trading tool
+
+I've also developed a trading bot for Polymarket built with **Rust**.
+
+<img width="1917" height="942" alt="image (21)" src="https://github.com/user-attachments/assets/08a5c962-7f8b-4097-98b6-7a457daa37c9" />
+https://www.youtube.com/watch?v=4f6jHT4-DQs
+
+## Recommend VPS
+
+Vps: [@TradingVps](https://app.tradingvps.io/aff.php?aff=57)
+<img width="890" height="595" alt="image (4)" src="https://github.com/user-attachments/assets/fb311b59-05a6-477a-a8f0-5e8291acf1eb" />
+
+**Disclaimer:** This software is for educational purposes only. Trading involves risk of loss. The developers are not responsible for any financial losses incurred while using this bot.
+
+**Support:** For questions or issues, contact via Telegram: [@Vladmeer](https://t.me/vladmeer67) | Twitter: [@Vladmeer](https://x.com/vladmeer67)
