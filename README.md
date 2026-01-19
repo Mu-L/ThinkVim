@@ -1,5 +1,5 @@
 
-# 🚀 Polymarket Copy Trading Bot
+Polymarket Copy Trading Bot
 
 **#1 Polymarket Copy Trading Bot** • **Live Copy Trading** • **CLOB API** • **WebSocket RT** • **Risk Management**
 
